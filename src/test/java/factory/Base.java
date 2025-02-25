@@ -55,8 +55,14 @@ public static WebDriver initilizeBrowser() throws IOException
         	 ChromeOptions op=new ChromeOptions();// 3 lines to skip the session not created exception
         	 op.addArguments("--no-sandbox");
         	 op.addArguments("--disable-dev-shm-usage");
+        	// Add unique user-data-dir to prevent session conflicts
+             String remoteUserDataDir = "/tmp/chrome-user-data-" + System.currentTimeMillis();
+             op.addArguments("--user-data-dir=" + remoteUserDataDir);
+
              capabilities.setBrowserName("chrome");
+             capabilities.setCapability(ChromeOptions.CAPABILITY, op);
              break;
+           
          case "edge":
         	 //WebDriverManager.edgedriver().setup();
              capabilities.setBrowserName("MicrosoftEdge");
@@ -74,25 +80,36 @@ public static WebDriver initilizeBrowser() throws IOException
 	}
 	else if(executionEnv.equalsIgnoreCase("local"))
 		{
-			switch(browser.toLowerCase()) 
-			{
-			case "chrome":
-				WebDriverManager.chromedriver().setup();
-		        driver=new ChromeDriver();
-		        break;
-		    case "edge":
-		    	WebDriverManager.edgedriver().setup(); //wbmanager installs the compatible version of browser with driver and runs
-		    	driver=new EdgeDriver();
-		        break;
-		    case "firefox":
-		    	WebDriverManager.firefoxdriver().setup();
-		    	driver=new FirefoxDriver();
-		        break;
-		    default:
-		        System.out.println("No matching browser");
-		        driver=null;
+		switch (browser) {
+        case "chrome":
+            WebDriverManager.chromedriver().setup();
+            ChromeOptions options = new ChromeOptions();
+            options.addArguments("--no-sandbox");
+            options.addArguments("--disable-dev-shm-usage");
+
+            // Add unique user-data-dir to prevent session conflicts
+            String localUserDataDir = "/tmp/chrome-user-data-" + System.currentTimeMillis();
+            options.addArguments("--user-data-dir=" + localUserDataDir);
+
+            driver = new ChromeDriver(options);
+            break;
+        case "edge":
+            WebDriverManager.edgedriver().setup();
+            driver = new EdgeDriver();
+            break;
+        case "firefox":
+            WebDriverManager.firefoxdriver().setup();
+            driver = new FirefoxDriver();
+            break;
+        default:
+            System.out.println("No matching browser");
+            driver = null;
 			}
 		}
+    if (driver != null) {
+        driver.manage().deleteAllCookies();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+    }
 	 driver.manage().deleteAllCookies(); 
 	 driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
 	 //driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(5));
@@ -108,8 +125,9 @@ public static WebDriver getDriver() {
 public static Properties getProperties() throws IOException
 {		 
     //FileReader file=new FileReader(System.getProperty("user.dir")+"\\src\\test\\resources\\config.properties");
+//    FileReader file = new FileReader(System.getProperty("user.dir") + File.separator + "src" + File.separator + "test" + File.separator + "resources" + File.separator + "config.properties");
     FileReader file = new FileReader(System.getProperty("user.dir") + File.separator + "src" + File.separator + "test" + File.separator + "resources" + File.separator + "config.properties");
-   
+
     p=new Properties();
 	p.load(file);
 	return p;

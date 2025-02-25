@@ -45,6 +45,7 @@ public class ProfilePageObj extends BaseClass{
 		
 //		update_link.sendKeys("C:\\Users\\nahazm\\Documents\\Res\\Nahaz_QA_Resume1.pdf");
 		  String filePath = new File("src\\test\\resources\\Nahaz_QA_Resume1.pdf").getAbsolutePath();
+		  System.out.println(filePath);
 //		  update_link.sendKeys(filePath);
 		
 		
