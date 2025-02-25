@@ -27,8 +27,8 @@ jobs:
           echo "Detected Chrome Version: $CHROME_VERSION"
 
           # Fetch compatible ChromeDriver version
-          CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" \
-            | jq -r --arg ver "$CHROME_VERSION" '.builds[$ver].version')
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_$CHROME_VERSION")
+
 
           if [ -z "$CHROMEDRIVER_VERSION" ]; then
             echo "Failed to determine ChromeDriver version!"
