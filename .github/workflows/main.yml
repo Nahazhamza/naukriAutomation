@@ -1,16 +1,16 @@
-name: Daily Naukri Automation Test
+name: Run Naukri Automation Daily
 
 on:
   schedule:
-    - cron: '30 3 * * *'  # Runs every day at 9:00 AM IST (3:30 AM UTC)
-  workflow_dispatch:  # Allows manual execution from GitHub UI
+    - cron: '5 9 * * *'  # Runs every day at 9:05 AM UTC
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up Java
@@ -19,22 +19,36 @@ jobs:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
       - name: Install Chrome & ChromeDriver
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable chromium-chromedriver
-          echo "Chrome Version:"
-          google-chrome --version
-          echo "ChromeDriver Version:"
+          sudo apt-get install -y google-chrome-stable
+          CHROME_VERSION=$(google-chrome --version | grep -oP '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+          echo "Detected Chrome Version: $CHROME_VERSION"
+
+          # Fetch compatible ChromeDriver version
+          CHROMEDRIVER_VERSION=$(curl -s "https://googlechromelabs.github.io/chrome-for-testing/latest-patch-versions-per-build-with-downloads.json" \
+            | jq -r --arg ver "$CHROME_VERSION" '.builds[$ver].version')
+
+          if [ -z "$CHROMEDRIVER_VERSION" ]; then
+            echo "Failed to determine ChromeDriver version!"
+            exit 1
+          fi
+
+          echo "Installing ChromeDriver version: $CHROMEDRIVER_VERSION"
+          wget -q "https://storage.googleapis.com/chrome-for-testing-public/$CHROMEDRIVER_VERSION/linux64/chromedriver-linux64.zip"
+          unzip chromedriver-linux64.zip
+          sudo mv chromedriver-linux64/chromedriver /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
           chromedriver --version
 
       - name: Build and Run Tests
-        run: mvn clean test
+        run: |
+          mvn clean test
+
+      - name: Upload Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: target/surefire-reports/
