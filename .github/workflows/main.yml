@@ -27,16 +27,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Install Google Chrome
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Install ChromeDriver (Fixed)
-        uses: nanasess/setup-chromedriver@v2
-        with:
-          chromedriver-version: 'stable'
-
-      - name: Verify Chrome Installation
-        run: google-chrome --version && chromedriver --version
+      - name: Install Chrome & ChromeDriver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable chromium-chromedriver
+          echo "Chrome Version:"
+          google-chrome --version
+          echo "ChromeDriver Version:"
+          chromedriver --version
 
       - name: Build and Run Tests
         run: mvn clean test
