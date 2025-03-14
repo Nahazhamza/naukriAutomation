@@ -14,7 +14,6 @@ import org.openqa.selenium.edge.EdgeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-
 import io.github.bonigarcia.wdm.WebDriverManager;
 
 public class Base {
@@ -45,14 +44,14 @@ public class Base {
                     ChromeOptions op = new ChromeOptions();
                     op.addArguments("--no-sandbox");
                     op.addArguments("--disable-dev-shm-usage");
-
+                    op.addArguments("--headless=new");  // New headless mode
+                    
                     // Apply user-data-dir only if NOT running in GitHub Actions
                     if (System.getenv("GITHUB_ACTIONS") == null) {
                         String remoteUserDataDir = "/tmp/chrome-user-data-" + System.currentTimeMillis();
                         op.addArguments("--user-data-dir=" + remoteUserDataDir);
                     }
-
-                    op.addArguments("--headless=new");  // New headless mode
+                    
                     capabilities.setBrowserName("chrome");
                     capabilities.setCapability(ChromeOptions.CAPABILITY, op);
                     break;
@@ -61,7 +60,8 @@ public class Base {
                 default: System.out.println("No matching browser"); return null;
             }
             
-            driver = new RemoteWebDriver(new URL("http://localhost:4444/wd/hub"), capabilities);
+            String seleniumGridUrl = p.getProperty("selenium_grid_url", "http://localhost:4444/wd/hub");
+            driver = new RemoteWebDriver(new URL(seleniumGridUrl), capabilities);
         } 
         else if (executionEnv.equalsIgnoreCase("local")) {
             switch (browser) {
@@ -70,13 +70,18 @@ public class Base {
                     ChromeOptions options = new ChromeOptions();
                     options.addArguments("--no-sandbox");
                     options.addArguments("--disable-dev-shm-usage");
-
+                    
+                    // Apply headless mode in CI/CD
+                    if (System.getenv("GITHUB_ACTIONS") != null) {
+                        options.addArguments("--headless=new");
+                    }
+                    
                     // Apply user-data-dir only if NOT running in GitHub Actions
                     if (System.getenv("GITHUB_ACTIONS") == null) {
                         String localUserDataDir = "/tmp/chrome-user-data-" + System.currentTimeMillis();
                         options.addArguments("--user-data-dir=" + localUserDataDir);
                     }
-
+                    
                     driver = new ChromeDriver(options);
                     break;
                 case "edge":
@@ -96,6 +101,7 @@ public class Base {
         if (driver != null) {
             driver.manage().deleteAllCookies();
             driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+            driver.manage().timeouts().pageLoadTimeout(Duration.ofSeconds(30)); // New timeout added
         }
         return driver;
     }
